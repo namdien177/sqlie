@@ -1,0 +1,13 @@
+# IntelliJ project files
+.idea
+*.iml
+out
+gen
+
+# NPM Libs
+node_modules
+
+# NODE-TYPESCRIPT COMPILED
+dist
+temp
+!temp/.gitkeep
