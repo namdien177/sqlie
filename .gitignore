@@ -9,5 +9,5 @@ node_modules
 
 # NODE-TYPESCRIPT COMPILED
 dist
-temp
+temp/*
 !temp/.gitkeep
