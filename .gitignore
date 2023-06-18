@@ -7,6 +7,10 @@ gen
 # NPM Libs
 node_modules
 
+# ENV
+.env
+.env.local
+
 # NODE-TYPESCRIPT COMPILED
 dist
 temp/*

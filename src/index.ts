@@ -1,9 +1,19 @@
+import "dotenv/config";
 import * as path from "path";
+import runQuery from "./database/query";
+import database from "./database";
 
 const fs = require("fs");
 const readline = require("readline");
 
 async function processFile(filePath: string) {
+  let tempStatement = "";
+  let statementExecuted = 0;
+  console.time("Backup Duration");
+  // For pool initialization, see above
+  // Do something with the connection
+  await runQuery(database, "SET FOREIGN_KEY_CHECKS = 0;");
+
   const fileStream = fs.createReadStream(filePath);
 
   const rl = readline.createInterface({
@@ -11,43 +21,37 @@ async function processFile(filePath: string) {
     crlfDelay: Infinity,
   });
 
-  const statements: string[] = [];
-  let tempStatement = "";
-
   for await (const line of rl) {
     console.log(line);
-    // Each line in the file will be successively available here as `line`.
-    // You can do your processing on each line here.
     if (
       line.startsWith("--") ||
       (line.startsWith("/*") && line.endsWith("*/;")) ||
       line.trim() === ""
     ) {
+      // skip lines that are full comment.
       continue;
     }
 
     if (line.endsWith(";")) {
-      if (tempStatement) {
-        statements.push(tempStatement.trim());
-      } else {
-        statements.push(line);
-      }
+      tempStatement += ` ${line}`;
+      await runQuery(database, tempStatement.trim());
+      statementExecuted++;
       tempStatement = "";
     } else {
-      tempStatement += `${line}\n`;
+      tempStatement += ` ${line}`;
     }
   }
   if (tempStatement) {
-    statements.push(tempStatement);
+    await runQuery(database, tempStatement);
+    statementExecuted++;
   }
-  console.log(statements[0]);
-  console.log(statements[1]);
-  console.log(statements[2]);
-  console.log(statements[3]);
-  console.log(statements[4]);
+  await runQuery(database, "SET FOREIGN_KEY_CHECKS = 1;");
+
+  console.timeEnd("Backup Duration");
+  console.log("SQL statement executed:", statementExecuted);
 }
 
 const cwd = process.cwd();
-const fileFromCwd = path.join(cwd, "backup.sql");
+const fileFromCwd = path.join(cwd, "./temp/backup.sql");
 
 processFile(fileFromCwd).then(() => console.log("read complete"));
